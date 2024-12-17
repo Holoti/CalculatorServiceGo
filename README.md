@@ -70,7 +70,7 @@ Request:
 
 ```
 {
-    "expression: "(-4+4*(7+8))-4)"
+    "expression": "(-4+4*(7+8))-4)"
 }
 ```
 
@@ -88,7 +88,7 @@ Request:
 
 ```
 {
-    "expression: "Hello Go"
+    "expression": "Hello Go"
 }
 ```
 

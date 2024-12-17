@@ -70,7 +70,7 @@ go run cmd/main.go
 
 ```
 {
-    "expression: "(-4+4*(7+8))-4)"
+    "expression": "(-4+4*(7+8))-4)"
 }
 ```
 
@@ -88,7 +88,7 @@ go run cmd/main.go
 
 ```
 {
-    "expression: "Hello Go"
+    "expression": "Hello Go"
 }
 ```
 

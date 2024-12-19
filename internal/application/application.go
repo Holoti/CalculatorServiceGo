@@ -24,10 +24,30 @@ func New(config Config) *Application {
 	}
 }
 
-func CalculateHandler(w http.ResponseWriter, r *http.Request) {
-	expression := r.URL.Query().Get("expression")
-	result, err := calculate.Calculate(expression)
+func CalcHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	var req struct {
+		Expression string `json:"expression"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Printf("error reading request: %v)", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": "Internal server error",
+		})
+		return
+	}
+
+	if req.Expression == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": "Bad request body",
+		})
+		return
+	}
+
+	result, err := calculate.Calculate(req.Expression)
 	if err != nil {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -35,6 +55,7 @@ func CalculateHandler(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
+
 	rounded := math.Round(result*math.Pow10(6)) / math.Pow10(6)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{
@@ -42,15 +63,22 @@ func CalculateHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func Logging(next http.HandlerFunc) http.HandlerFunc {
+func ValidateMethod(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		expression := r.URL.Query().Get("expression")
-		log.Printf("expression: %s", expression)
+		if r.Method != http.MethodPost {
+			w.Header().Set("Content-type", "application/json")
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			json.NewEncoder(w).Encode(map[string]string{
+				"error": "Method not allowed; use POST",
+			})
+			return
+		}
 		next.ServeHTTP(w, r)
 	})
 }
 
 func (a *Application) Run() {
-	http.Handle("/api/v1/calculate", Logging(CalculateHandler))
-	http.ListenAndServe(fmt.Sprintf("127.0.0.1:%d", a.Cfg.Port), nil)
+	// http.HandleFunc("/api/v1/calculate", CalcHandler)
+	http.Handle("/api/v1/calculate", ValidateMethod(CalcHandler))
+	http.ListenAndServe(fmt.Sprintf("localhost:%d", a.Cfg.Port), nil)
 }

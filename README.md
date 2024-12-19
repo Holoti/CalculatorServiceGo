@@ -21,99 +21,28 @@ go run cmd/main.go
 Service accepts http requests on `/api/v1/calculate` endpoint in following format:
 
 ```
-{
-    "expression": "your expression here"
-}
+curl --location 'localhost:8080/api/v1/calculate' \
+--header 'Content-Type: application/json' \
+--data '{
+    "expression": "2+2"
+}'
 ```
 
-Expression can consist of integers and arithmetic operations (+, -, *, /, unary minus and brackets). Support for float values as input is WIP.
+Expression can consist of numbers and arithmetic operations (+, -, *, /, unary minus and brackets).
 
-If expression is valid, status code is `200` and response is following:
+### Examples
 
-```
-{
-    "result": "calculation result"
-}
-```
+| Request Body               | Path              | Method       | Status Code | Message                      |
+| -------------------------- | ----------------- | ------------ | ----------- | ---------------------------- |
+| `{"expression":"2+2"}`     | /unsupported/path | POST         | 404         | 404 page not found           |
+| `{"expression":"2+2"}`     | /api/v1/calculate | Any but POST | 405         | Method not allowed; use POST |
+| `{"some":"thing"}`         | /api/v1/calculate | POST         | 400         | Bad request body             |
+| `{"expression":"0/0"}`     | /api/v1/calculate | POST         | 422         | Expression is not valid      |
+| `{"expression":"2.5+2.5"}` | /api/v1/calculate | POST         | 200         | 5                            |
 
-Otherwise, status code is `422` and response is following:
+### Notes
 
-```
-{
-    "error": "Expression is not valid"
-}
-```
-
-## Examples:
-
-### 1. Valid expression
-
-Request:
-
-```
-{
-    "expression": "(26/(-(81))-46)*62*30-(3)*(85)-0/17"
-}
-```
-
-status code `200`, response:
-
-```
-{
-    "result": "-86412.037037"
-}
-```
-
-### 2. Invalid expression
-
-Request:
-
-```
-{
-    "expression": "(-4+4*(7+8))-4)"
-}
-```
-
-status code `422`, response:
-
-```
-{
-    "error": "Expression is not valid"
-}
-```
-
-### 3. Invalid expression
-
-Request:
-
-```
-{
-    "expression": "Hello Go"
-}
-```
-
-status code `422`, response:
-
-```
-{
-    "error": "Expression is not valid"
-}
-```
-
-### 4. Invalid request
-
-Request:
-
-```
-{
-    "randomKey": "randomValue"
-}
-```
-
-status code `422`, response:
-
-```
-{
-    "error": "Expression is not valid"
-}
-```
+- Spaces are ignored, e.g. "2 + 2 3" is equivalent to "2+23"
+- Omitting operation signs near brackets is not permitted, e.g. "2(1+5)" will return an error, not "12"
+- Unary minus is permitted only after opening bracket or as the first character, e.g. "2*-2" will return an error, not "-4"; on the other hand, "-3+2*(-1)" will successfully return "-5"
+- A period, not a comma, is used as a separator for decimal fractions, e.g. "2.5" and not "2,5"

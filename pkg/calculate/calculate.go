@@ -14,6 +14,10 @@ type Stack struct {
 	items []StackElement
 }
 
+func NewStack() *Stack {
+	return &Stack{}
+}
+
 func (s *Stack) Push(data StackElement) {
 	s.items = append(s.items, data)
 }
@@ -21,14 +25,6 @@ func (s *Stack) Push(data StackElement) {
 func (s *Stack) IsEmpty() bool {
 	return len(s.items) == 0
 }
-
-// func (s *Stack) Pop() (StackElement, error) {
-// 	if s.IsEmpty() {
-// 		return StackElement{}, fmt.Errorf("stack empty")
-// 	}
-// 	s.items = s.items[:len(s.items)-1]
-// 	return s.items[len(s.items)-1], nil
-// }
 
 func (s *Stack) Pop() StackElement {
 	if s.IsEmpty() {
@@ -96,7 +92,7 @@ func Brackets(s string) error {
 	return nil
 }
 
-func apply(stack *Stack, operation byte) error {
+func Apply(stack *Stack, operation byte) error {
 	if len(stack.items) < 2 {
 		return fmt.Errorf("not enough operands")
 	}
@@ -110,9 +106,11 @@ func apply(stack *Stack, operation byte) error {
 	return nil
 }
 
-func Calculate(expression string) (float64, error) {
-	var operands Stack
-	var operations Stack
+func Calc(expression string) (float64, error) {
+	// var operands Stack
+	// var operations Stack
+	operands := NewStack()
+	operations := NewStack()
 	s := ""
 
 	for _, i := range expression {
@@ -129,7 +127,15 @@ func Calculate(expression string) (float64, error) {
 	for i := 0; i < len(s); i++ {
 		if '0' <= s[i] && s[i] <= '9' {
 			num := ""
-			for '0' <= s[i] && s[i] <= '9' {
+			hasDot := false
+			for '0' <= s[i] && s[i] <= '9' || s[i] == '.' {
+				// for '0' <= s[i] && s[i] <= '9' {
+				if s[i] == '.' {
+					if hasDot {
+						return 0, fmt.Errorf("bad number")
+					}
+					hasDot = true
+				}
 				num += string(s[i])
 				i++
 				if i == len(s) {
@@ -146,7 +152,7 @@ func Calculate(expression string) (float64, error) {
 			operations.Push(StackElement{sign: '('})
 		} else if s[i] == ')' {
 			for operations.Top().sign != '(' {
-				err := apply(&operands, operations.Pop().sign)
+				err := Apply(operands, operations.Pop().sign)
 				if err != nil {
 					return 0, err
 				}
@@ -168,16 +174,16 @@ func Calculate(expression string) (float64, error) {
 				if current_prior < prior {
 					break
 				}
-				err1 := apply(&operands, operations.Pop().sign)
-				if err1 != nil {
-					return 0, err1
+				err = Apply(operands, operations.Pop().sign)
+				if err != nil {
+					return 0, err
 				}
 			}
 			operations.Push(StackElement{sign: s[i]})
 		}
 	}
 	for !operations.IsEmpty() {
-		err := apply(&operands, operations.Pop().sign)
+		err := Apply(operands, operations.Pop().sign)
 		if err != nil {
 			return 0, err
 		}

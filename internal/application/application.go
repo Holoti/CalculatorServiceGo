@@ -47,11 +47,11 @@ func CalcHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := calculate.Calculate(req.Expression)
+	result, err := calculate.Calc(req.Expression)
 	if err != nil {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		json.NewEncoder(w).Encode(map[string]string{
-			"error": "Expression is not valid",
+			"error": fmt.Sprintf("Expression is not valid: %v", err),
 		})
 		return
 	}

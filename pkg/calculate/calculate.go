@@ -143,6 +143,9 @@ func Calc(expression string) (float64, error) {
 				}
 			}
 			i--
+			if len(num) > 308 {
+				return 0, fmt.Errorf("number too big")
+			}
 			number, err := strconv.ParseFloat(num, 64)
 			if err != nil {
 				return 0, err

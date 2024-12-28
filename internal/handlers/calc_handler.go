@@ -17,10 +17,10 @@ func CalcHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		log.Printf("error reading request: %v)", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		log.Printf("error reading request: %v", err)
+		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
-			"error": "Internal server error",
+			"error": "Bad request body",
 		})
 		return
 	}

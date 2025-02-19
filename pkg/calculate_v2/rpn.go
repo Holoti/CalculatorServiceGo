@@ -46,7 +46,7 @@ func Priority(operation byte) int {
 	switch operation {
 	case '(':
 		return 1
-	case '+', '-', ')': // TODO am i sure about ) priority?
+	case '+', '-':
 		return 2
 	case '*', '/':
 		return 3

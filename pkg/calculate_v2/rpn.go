@@ -2,7 +2,7 @@ package calculate_v2
 
 import (
 	"errors"
-	"log"
+	"fmt"
 	"strconv"
 )
 
@@ -30,7 +30,10 @@ func (s *Stack) IsEmpty() bool {
 }
 
 func (s *Stack) Pop() StackElement {
-	result := s.Top()
+	if s.IsEmpty() {
+		return StackElement{}
+	}
+	result := s.items[len(s.items)-1]
 	s.items = s.items[:len(s.items)-1]
 	return result
 }
@@ -86,28 +89,28 @@ func LeftAssociative(sign byte) bool {
 	return sign != '^'
 }
 
-func RPN(expr string) { // TODO this is concurrent; how to return result?
+func RPN(expr string) (*Stack, error) {
 	output := NewStack()
 	operators := NewStack()
 
 	if err := Brackets(expr); err != nil {
-		// TODO handle error
+		return NewStack(), err
 	}
 
-	for i := range expr {
+	for i := 0; i < len(expr); i++ {
 		if expr[i] == ' ' || expr[i] == '\t' {
 			continue
 		}
 		if '0' <= expr[i] && expr[i] <= '9' {
 			startIndex := i
-			for '0' <= expr[i] && expr[i] <= '9' || expr[i] == DecimalSeparator {
+			for i < len(expr) && ('0' <= expr[i] && expr[i] <= '9' || expr[i] == DecimalSeparator) {
 				i++
 			}
 			endIndex := i
 			i--
 			num, err := strconv.ParseFloat(expr[startIndex:endIndex], 64)
 			if err != nil {
-				log.Fatal(err) // TODO handle error
+				return NewStack(), err
 			}
 			output.Push(StackElement{num: num})
 			continue
@@ -118,7 +121,7 @@ func RPN(expr string) { // TODO this is concurrent; how to return result?
 		}
 		if expr[i] == ')' {
 			for operators.Top().sign != '(' {
-				// TODO do the operations somehow
+				output.Push(operators.Pop())
 			}
 			operators.Pop()
 			continue
@@ -131,20 +134,21 @@ func RPN(expr string) { // TODO this is concurrent; how to return result?
 		if IsOperation(expr[i]) {
 			prior := Priority(expr[i])
 			la := LeftAssociative(expr[i])
-			topSign := operators.Top().sign
-			for topSign != '(' && (Priority(topSign) > prior || (Priority(topSign) == prior && la)) {
-				// TODO do the operations somehow
+			for !operators.IsEmpty() {
+				topSign := operators.Top().sign
+				currentPrior := Priority(topSign)
+				if currentPrior < prior || currentPrior == prior && !la {
+					break
+				}
+				output.Push(operators.Pop())
 			}
 			operators.Push(StackElement{sign: expr[i]})
 			continue
 		}
-		// TODO handle error: wrong symbol
+		return NewStack(), fmt.Errorf("unsupported symbol: %v", expr[i])
 	}
 	for !operators.IsEmpty() {
-		// TODO do the operations somehow
+		output.Push(operators.Pop())
 	}
-	if len(output.items) != 1 {
-		// TODO handle error
-	}
-	// TODO return the output.Top().num somehow
+	return output, nil
 }
